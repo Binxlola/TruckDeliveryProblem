@@ -8,9 +8,6 @@ public class Town {
         this.dropOff = dropOff;
     }
 
-    public void setPickup(int pickup) {this.pickup = pickup;}
-    public void setDropOff(int dropOff) {this.dropOff = dropOff;}
-
     public int getPickup() {return this.pickup;}
     public int getDropOff() {return this.dropOff;}
 

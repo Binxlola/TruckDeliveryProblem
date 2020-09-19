@@ -1,7 +1,8 @@
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
+/**
+ * @author Jason Smit
+ */
 public class TruckDelivery {
 
     public static Town[] route;
@@ -33,9 +34,9 @@ public class TruckDelivery {
         int pickUp = bruteForce(nextTown, currentTown.getPickup(), currentLoadValue != 0 ? profit + dropOffProfit: profit);
         int skip = bruteForce(nextTown, currentLoadValue, profit);
 
-        if(pickUp > dropOff && pickUp > skip) {
+        if(pickUp >= dropOff && pickUp > skip) {
             actions[currentTownIdx] = "Picked up at town" + currentTownIdx;
-        } else if (dropOff > pickUp && dropOff > skip) {
+        } else if (dropOff >= pickUp && dropOff > skip) {
             actions[currentTownIdx] = "Dropped off at town" + currentTownIdx;
         }
 
@@ -81,6 +82,13 @@ public class TruckDelivery {
         return profit;
     }
 
+    /**
+     * Creates a 2D array, runs through the currently set route and populates the 2D array with all possible pick up and drop of pair values.
+     * If there was a pickup and drop off prior to the pickup being inspected, it's value may be added with the respective drop off
+     * Giving a value that is derived from 2 pick up/drop off pairs in succession. While doing this, a current max value
+     * Will be retained, this value represents any number of pick-up/drop-off combinations given their added value is the highest so far.
+     * @return The maximum profit attainable along the currently set route.
+     */
     public static int exactApproach() {
         int[][] profitTable = new int[route.length - 1][route.length];
         int currentMax = 0;
@@ -92,12 +100,12 @@ public class TruckDelivery {
                 int previousProfit = i > 0 ? findPastMax(i,profitTable) : 0; // Highest profit obtained along route before current pickup town
 
                 if(i > 0) {
-                    profitTable[i][j] = dropOffProfit > 0 ? dropOffProfit + previousProfit : previousProfit;
+                    profitTable[i][j] = dropOffProfit > 0 ? dropOffProfit + previousProfit : previousProfit; // Can be a combo of a pick-up/drop-off pair prior
                 } else {
                     profitTable[i][j] = Math.max(dropOffProfit, 0);
                 }
 
-                int finalProfit = profitTable[i][j];
+                int finalProfit = profitTable[i][j]; // The profit of the current pick-up/drop-off pair regardless of their being a combo or not
                 if(finalProfit > currentMax) { currentMax = finalProfit; }
             }
         }
@@ -105,9 +113,18 @@ public class TruckDelivery {
         return currentMax;
     }
 
+    /**
+     * Given a index representing a current pick-up point being inspected and a up to date profit table for a route.
+     * Will then traverse from the first town as a pickup and then traverse from the town after as a dropoff upto the given
+     * index and find the highest value between these points
+     * @param pickupIdx The index value of the pick-up point currently being inspected
+     * @param profitTable The up to date profit table
+     * @return The highest value found
+     */
     private static int findPastMax(int pickupIdx, int[][] profitTable) {
         int currentMax = 0;
 
+        // NOTE: Can go upto but not past the pickup index as route can't take values that are ahead.
         for(int i = 0; i <= pickupIdx; i++) { // Start from first possible pickup town
             for(int j = i + 1; j <= pickupIdx; j++) { // Start from first possible dropoff town
                 int profit = profitTable[i][j];
@@ -117,19 +134,31 @@ public class TruckDelivery {
         return currentMax;
     }
 
+
+    /**
+     * Given a number of town will generate a route with the given number of towns following the restrictions
+     * @param nTowns Number of town to be in the route
+     */
     public static void createRoute(int nTowns) {
         route = new Town[nTowns];
         Random ran = new Random();
+
         for(int i = 0; i < nTowns; i++) {
             int pickUp = ran.nextInt(100);
             int dropOff;
+
+            // Drop off value always has to be lower or equal to pick up value
             do {
                 dropOff = ran.nextInt(100);
             } while (dropOff > pickUp);
+
             route[i] = new Town(pickUp, dropOff);
         }
     }
 
+    /**
+     * Runs all algorithms with the currently set route
+     */
     public static void run() {
         long startTime;
         long duration;
@@ -155,9 +184,17 @@ public class TruckDelivery {
         profit = exactApproach();
         duration = System.currentTimeMillis() - startTime;
         System.out.println("Final Profit: " + profit);
-        System.out.println("completed in: " + (double)(duration / 1000) + " seconds");
+        System.out.println("completed in: " + (double)(duration / 1000) + " seconds\n");
+
+        System.out.println("Path taken: ");
+        for(String action: actions) {
+            if (action != null) System.out.println(action);
+        }
     }
 
+    /**
+     * Creates and sets pre-defined routes and then runs the algorithms for each route
+     */
     public static void runTests() {
 
         route = new Town[1];
